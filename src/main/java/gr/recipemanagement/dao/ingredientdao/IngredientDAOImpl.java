@@ -86,7 +86,7 @@ public class IngredientDAOImpl implements IIngredientDAO {
 
     @Override
     public Ingredient update(Ingredient ingredient) throws IngredientNotFoundDAOException {
-        String sql = "UPDATE ingredients SET ingredientname = ?, quantity = ?, quantitytype = ?, ingredientid = ?";
+        String sql = "UPDATE ingredients SET ingredientname = ?, quantity = ?, quantitytype = ? WHERE ingredientid = ?";
 
         try (Connection connection = DBUtil.getConnection();
              PreparedStatement ps = connection.prepareStatement(sql)) {

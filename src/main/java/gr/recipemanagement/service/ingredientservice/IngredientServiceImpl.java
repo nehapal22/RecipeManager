@@ -17,14 +17,27 @@ public class IngredientServiceImpl implements IIngredientService {
 
     @Override
     public Ingredient insertIngredient(IngredientInsertDTO dto) throws IngredientNotFoundDAOException {
-        if(dto == null) return null;
+        System.out.println("IngredientServiceImpl.insertIngredient called with DTO: " + dto);
+        if(dto == null) {
+            System.err.println("Error: Received null DTO");
+            return null;
+        }
+
+        if (dto.getIngredientName() == null || dto.getIngredientName().trim().isEmpty()) {
+            System.err.println("Error: Ingredient name is null or empty");
+            throw new IngredientNotFoundDAOException("Ingredient name cannot be null or empty");
+        }
 
         Ingredient ingredient;
 
         try {
             ingredient = map(dto);
-            return ingredientDAO.insert(ingredient);
+            System.out.println("Mapped DTO to Ingredient: " + ingredient);
+            Ingredient insertedIngredient = ingredientDAO.insert(ingredient);
+            System.out.println("Ingredient inserted successfully: " + insertedIngredient);
+            return insertedIngredient;
         } catch (IngredientNotFoundDAOException e){
+            System.err.println("Error inserting ingredient: " + e.getMessage());
             e.printStackTrace();
             throw e;
         }
@@ -85,10 +98,20 @@ public class IngredientServiceImpl implements IIngredientService {
     }
 
     private Ingredient map(IngredientInsertDTO dto){
-        return new Ingredient(null, dto.getIngredientName(), dto.getQuantity(), dto.getQuantityType());
+        return new Ingredient(
+            null,
+            dto.getIngredientName().trim(),
+            dto.getQuantity() != null ? dto.getQuantity() : 0.0,
+            dto.getQuantityType() != null ? dto.getQuantityType().trim() : ""
+        );
     }
 
     private Ingredient map(IngredientUpdateDTO dto){
-        return new Ingredient(dto.getId(), dto.getIngredientName(), dto.getQuantity(), dto.getQuantityType());
+        return new Ingredient(
+            dto.getId(),
+            dto.getIngredientName() != null ? dto.getIngredientName().trim() : "",
+            dto.getQuantity() != null ? dto.getQuantity() : 0.0,
+            dto.getQuantityType() != null ? dto.getQuantityType().trim() : ""
+        );
     }
 }
