@@ -10,11 +10,6 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Utility class to fetch ingredients from a selected recipe
- *
- * @author Ntirintis John
- */
 public class IngredientsUtil {
 
     public static List<Ingredient> fetchIngredientsForRecipe(int recipeId){
@@ -71,12 +66,14 @@ public class IngredientsUtil {
     }
 
     public static String[] ingredientsToString(List<Ingredient> ingredients){
+        if (ingredients == null || ingredients.isEmpty()) {
+            return new String[0];
+        }
+        
         String[] ingredientNames = new String[ingredients.size()];
-
         for(int i = 0; i < ingredients.size(); i++){
             ingredientNames[i] = ingredients.get(i).getIngredientName();
         }
-
         return ingredientNames;
     }
 }

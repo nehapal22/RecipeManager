@@ -1,8 +1,5 @@
 package gr.recipemanagement.dto;
 
-/**
- * @author Ntirintis John
- */
 public abstract class BaseDTO {
 
     private Integer id;

@@ -2,9 +2,7 @@ package gr.recipemanagement.dto.ingredientdto;
 
 import gr.recipemanagement.dto.BaseDTO;
 
-/**
- * @author Ntirintis John
- */
+
 public class IngredientInsertDTO extends BaseDTO {
 
     private String ingredientName;

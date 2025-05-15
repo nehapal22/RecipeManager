@@ -14,7 +14,7 @@ public class IngredientDAOImpl implements IIngredientDAO {
     @Override
     public Ingredient insert(Ingredient ingredient) throws IngredientNotFoundDAOException {
         System.out.println("Entered normal IngredientDAOImpl insert");
-        String sql = "INSERT INTO INGREDIENTS (INGREDIENTNAME, QUANTITY, QUANTITYTYPE) VALUES (?,?,?)";
+        String sql = "INSERT INTO ingredients (ingredientname, quantity, quantitytype) VALUES (?,?,?)";
         System.out.println("IngredientDAOImpl: ran query, entering try");
 
         try (Connection connection = DBUtil.getConnection();
@@ -51,7 +51,7 @@ public class IngredientDAOImpl implements IIngredientDAO {
     @Override
     public int insert(String ingredientName) throws IngredientNotFoundDAOException {
         System.out.println("Entered overloaded IngredientDAOImpl insert");
-        String sql = "INSERT INTO INGREDIENTS (INGREDIENTNAME) VALUES (?)";
+        String sql = "INSERT INTO ingredients (ingredientname) VALUES (?)";
         int generatedId = -1;
 
         System.out.println("IngredientDAOImpl entering 1st try");
@@ -86,7 +86,7 @@ public class IngredientDAOImpl implements IIngredientDAO {
 
     @Override
     public Ingredient update(Ingredient ingredient) throws IngredientNotFoundDAOException {
-        String sql = "UPDATE INGREDIENTS SET INGREDIENTNAME = ?, QUANTITY = ?, QUANTITYTPE = ?, INGREDIENTID = ?";
+        String sql = "UPDATE ingredients SET ingredientname = ?, quantity = ?, quantitytype = ?, ingredientid = ?";
 
         try (Connection connection = DBUtil.getConnection();
              PreparedStatement ps = connection.prepareStatement(sql)) {
@@ -121,7 +121,7 @@ public class IngredientDAOImpl implements IIngredientDAO {
     @Override
     public void delete(int id) throws IngredientNotFoundDAOException {
 
-        String sql = "DELETE FROM INGREDIENTS WHERE ID = ?";
+        String sql = "DELETE FROM ingredients WHERE ingredientid = ?";
 
         try (Connection connection = DBUtil.getConnection();
              PreparedStatement ps = connection.prepareStatement(sql)) {
@@ -146,7 +146,7 @@ public class IngredientDAOImpl implements IIngredientDAO {
 
     @Override
     public Ingredient getById(int id) throws IngredientNotFoundDAOException {
-        String sql = "SELECT * FROM INGREDIENTS WHERE ID = ?";
+        String sql = "SELECT * FROM ingredients WHERE ingredientid = ?";
         Ingredient ingredient = null;
         ResultSet rs = null;
 
@@ -174,7 +174,8 @@ public class IngredientDAOImpl implements IIngredientDAO {
 
     @Override
     public Ingredient getByName(String ingredientName) throws IngredientNotFoundDAOException {
-        String sql = "SELECT * FROM ingredients WHERE ingredientname = ?";
+        System.out.println("IngredientDAOImpl.getByName - Looking for ingredient: '" + ingredientName + "'");
+        String sql = "SELECT * FROM ingredients WHERE LOWER(ingredientname) = LOWER(?)";
 
         Ingredient ingredient = null;
         ResultSet rs = null;
@@ -182,11 +183,16 @@ public class IngredientDAOImpl implements IIngredientDAO {
         try(Connection connection = DBUtil.getConnection();
             PreparedStatement ps = connection.prepareStatement(sql)){
 
-            ps.setString(1, ingredientName);
+            String trimmedName = ingredientName.trim();
+            System.out.println("IngredientDAOImpl.getByName - Searching with trimmed name: '" + trimmedName + "'");
+            ps.setString(1, trimmedName);
             rs = ps.executeQuery();
 
             if(rs.next()){
                 ingredient = new Ingredient(rs.getInt("INGREDIENTID"), rs.getString("INGREDIENTNAME"), rs.getDouble("QUANTITY"), rs.getString("QUANTITYTYPE"));
+                System.out.println("IngredientDAOImpl.getByName - Found ingredient: " + ingredient.getIngredientName() + " (ID: " + ingredient.getId() + ")");
+            } else {
+                System.out.println("IngredientDAOImpl.getByName - No ingredient found with name: '" + trimmedName + "'");
             }
 
         } catch (SQLException e){

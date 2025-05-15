@@ -1,7 +1,6 @@
 package gr.recipemanagement.viewcontroller;
 
 import gr.recipemanagement.dao.recipedao.IRecipeDAO;
-import gr.recipemanagement.dao.recipedao.RecipeDAOImpl;
 import gr.recipemanagement.service.exceptions.RecipeNotFoundDAOException;
 
 import javax.swing.*;
@@ -12,9 +11,6 @@ import java.util.List;
 
 import static gr.recipemanagement.viewcontroller.Menu.createStyledButton;
 
-/**
- * @author Ntirintis John
- */
 public class ViewRecipe extends JFrame {
     private static final long serialVersionUID = 123459;
     private JPanel contentPane;

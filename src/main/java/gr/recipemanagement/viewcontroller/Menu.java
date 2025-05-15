@@ -6,20 +6,14 @@ import gr.recipemanagement.factory.SQLStorageFactory;
 import gr.recipemanagement.factory.StorageFactory;
 
 import javax.swing.*;
-import java.sql.Connection;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
 
-/**
- * @author Ntirintis John
- */
 public class Menu extends JFrame {
 
     private static final long serialVersionUID = 123456;
-    private JPanel contentPane;
-    private static Connection connection;
     private JButton addIngredientButton;
     private JButton editIngredientButton;
     private JButton viewIngredientButton;
@@ -43,7 +37,6 @@ public class Menu extends JFrame {
 
         Color backgroundColor = Menu.backgroundColor;
         Color buttonColor = Menu.buttonColor;
-        Font font = Menu.buttonFont;
 
         // Create main panel with BoxLayout for vertical alignment
         JPanel mainMenuPanel = new JPanel();
@@ -98,7 +91,7 @@ public class Menu extends JFrame {
         add(mainMenuPanel);
 
         // Pack the frame
-//        pack();
+        pack();
     }
     private void openEditRecipeFrame() {
         StorageFactory factory = new SQLStorageFactory();
@@ -109,7 +102,7 @@ public class Menu extends JFrame {
     public static JButton createStyledButton(String text, Color color, Font font) {
         JButton button = new JButton(text);
         button.setBackground(color);
-        button.setForeground(Color.WHITE);
+        button.setForeground(Color.BLACK); // Change text color to black for better contrast
         button.setFont(font);
         button.setBorder(BorderFactory.createEmptyBorder(10, 20, 10, 20));
         button.setFocusPainted(false);

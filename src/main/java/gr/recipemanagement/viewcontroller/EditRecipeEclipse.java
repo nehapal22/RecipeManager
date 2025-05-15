@@ -8,10 +8,8 @@ import gr.recipemanagement.model.Recipe;
 import gr.recipemanagement.service.exceptions.IngredientNotFoundDAOException;
 import gr.recipemanagement.service.exceptions.NoRecipeSelectedException;
 import gr.recipemanagement.service.exceptions.RecipeNotFoundDAOException;
-import gr.recipemanagement.service.ingredientservice.IIngredientService;
 import gr.recipemanagement.service.recipeservice.IRecipeService;
 import gr.recipemanagement.service.recipeservice.RecipeServiceImpl;
-import gr.recipemanagement.service.util.IngredientsUtil;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
@@ -25,16 +23,10 @@ import java.util.List;
 
 import static gr.recipemanagement.viewcontroller.Menu.createStyledButton;
 
-/**
- * @author Ntirintis John
- */
 public class EditRecipeEclipse extends JFrame {
 
     private int listSize = 0;
-    private int listPosition = 0;
     private List<Recipe> recipes;
-    private List<String> recipeNames;
-
     private JPanel contentPane;
     private JComboBox<String> recipesComboBox;
     private JTextField recipeNameTxt;
@@ -45,14 +37,13 @@ public class EditRecipeEclipse extends JFrame {
     private JButton updateBtn;
     private JButton cancelBtn;
     private Recipe selectedRecipe;
-
     private IRecipeService recipeService;
-    private IIngredientService ingredientService;
     private IngredientDAOImpl ingredientDAO;
 
 
     public EditRecipeEclipse(StorageFactory factory) {
         this.recipeService = new RecipeServiceImpl(factory);
+        this.ingredientDAO = new IngredientDAOImpl();
         setTitle("Edit Recipe");
 
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -87,9 +78,12 @@ public class EditRecipeEclipse extends JFrame {
         contentPane.add(recipeNameTxt);
 
         ingredientsTxt = new JTextField();
-        ingredientsTxt.setColumns(10);
+        ingredientsTxt.setColumns(50);  // Increase column size
         ingredientsTxt.setBounds(81, 122, 302, 20);
         contentPane.add(ingredientsTxt);
+        
+        // Add tooltip to help users
+        ingredientsTxt.setToolTipText("Enter ingredients separated by commas (e.g., Salt, Pepper, Sugar)");
 
         instructionsTxt = new JTextField();
         instructionsTxt.setColumns(10);
@@ -139,7 +133,25 @@ public class EditRecipeEclipse extends JFrame {
                     System.out.println("recipeService: " + recipeService);
                     System.out.println("recipeNameTxt: " + recipeNameTxt);
                     System.out.println("recipesComboBox: " + recipesComboBox);
-                    recipes = recipeService.getByFirstLetter(recipeNameTxt.getText());
+                    String searchText = recipeNameTxt.getText();
+                    if (searchText.isEmpty()) {
+                        JOptionPane.showMessageDialog(null, "Please enter a search term", "Error", JOptionPane.ERROR_MESSAGE);
+                        return;
+                    }
+                    // Try to get recipe by exact name first
+                    try {
+                        Recipe exactRecipe = recipeService.getRecipeByName(recipeNameTxt.getText());
+                        if (exactRecipe != null) {
+                            recipes = new ArrayList<>();
+                            recipes.add(exactRecipe);
+                        } else {
+                            // If not found by exact name, search by first letter
+                            recipes = recipeService.getByFirstLetter(recipeNameTxt.getText());
+                        }
+                    } catch (RecipeNotFoundDAOException ex) {
+                        // If getRecipeByName fails, fall back to first letter search
+                        recipes = recipeService.getByFirstLetter(recipeNameTxt.getText());
+                    }
 
                     // Remove any previous items if there are any
                     recipesComboBox.removeAllItems();
@@ -157,8 +169,6 @@ public class EditRecipeEclipse extends JFrame {
                     for(Recipe recipe: recipes){
                         recipesComboBox.addItem(recipe.getRecipeName());
                     }
-
-                    listPosition = 0;
                 } catch (RecipeNotFoundDAOException e1){
                     JOptionPane.showMessageDialog(null, e1.getMessage(), "Error!", JOptionPane.ERROR_MESSAGE);
                 }
@@ -171,21 +181,22 @@ public class EditRecipeEclipse extends JFrame {
                 if(e.getStateChange() == ItemEvent.SELECTED){
                     // Get Selected Recipe Name
                     String selectedRecipeName = (String) e.getItem();
-                    selectedRecipe = recipes.stream()
+                    Recipe currentRecipe = recipes.stream()
                             .filter(r -> r.getRecipeName().equals(selectedRecipeName))
                             .findFirst()
                             .orElse(null);
 
-                    // Fetch the Recipe object with that name
-                    Recipe selectedRecipe = recipes.stream()
-                            .filter(r -> r.getRecipeName().equals(selectedRecipeName))
-                            .findFirst()
-                            .orElse(null);
-
-                    // Update the text fields
-                    if(selectedRecipe != null){
+                    // Update the text fields with the selected recipe's data
+                    if(currentRecipe != null){
+                        selectedRecipe = currentRecipe;
                         recipeNameTxt.setText(selectedRecipe.getRecipeName());
-                        String ingredients = selectedRecipe.getIngredients() != null ? selectedRecipe.getIngredients().toString() : "No ingredients";
+                        String ingredients = "No ingredients";
+                        if (selectedRecipe.getIngredients() != null && !selectedRecipe.getIngredients().isEmpty()) {
+                            ingredients = selectedRecipe.getIngredients().stream()
+                                .map(Ingredient::getIngredientName)
+                                .reduce((a, b) -> a + ", " + b)
+                                .orElse("No ingredients");
+                        }
                         ingredientsTxt.setText(ingredients);
                         instructionsTxt.setText(selectedRecipe.getInstructions());
                         cookingTimeTxt.setText(String.valueOf(selectedRecipe.getCookingTime()));
@@ -201,16 +212,12 @@ public class EditRecipeEclipse extends JFrame {
                     if(selectedRecipe == null) throw new NoRecipeSelectedException("No recipe selected! Please select a recipe before updating.");
 
                     RecipeUpdateDTO updateDTO = new RecipeUpdateDTO();
-                    List<Ingredient> ingredientList = new ArrayList<>();
+
+                    // Set the recipe ID for updating
+                    updateDTO.setId(selectedRecipe.getId());
 
                     String newRecipeName = recipeNameTxt.getText();
                     updateDTO.setRecipeName(newRecipeName);
-
-                    // Get the list of ingredients from the selected recipe
-                    List<Ingredient> ingredients = selectedRecipe.getIngredients();
-
-                    // Split each ingredient into different strs
-                    String[] newIngredients = IngredientsUtil.ingredientsToString(ingredients);
 
                     // Cooking Time Number Parsing
                     try {
@@ -222,22 +229,66 @@ public class EditRecipeEclipse extends JFrame {
                     }
 
                     // Ingredient Parsing
-                    // strip all white spaces and then split by comma
-                    String ingredientTxt = ingredientsTxt.getText().replaceAll("\\s", "");
-                    String[] allIngredients = ingredientTxt.split(",");
-                    for (String ingredientName : allIngredients) {
-                        Ingredient ingredient = ingredientDAO.getByName(ingredientName);
-                        if (ingredient == null) {
-                            throw new IngredientNotFoundDAOException("Ingredient not found: " + ingredientName);
+                    String ingredientTxt = ingredientsTxt.getText().trim();
+                    if (!ingredientTxt.isEmpty() && !ingredientTxt.equals("No ingredients")) {
+                        String[] allIngredients = ingredientTxt.split(",");
+                        for (String ingredientName : allIngredients) {
+                            String trimmedName = ingredientName.trim();
+                            if (!trimmedName.isEmpty()) {
+                                System.out.println("Looking up ingredient: '" + trimmedName + "'");
+                                Ingredient ingredient = ingredientDAO.getByName(trimmedName);
+                                if (ingredient == null) {
+                                    throw new IngredientNotFoundDAOException("Ingredient not found: '" + trimmedName + "'");
+                                }
+                                System.out.println("Found ingredient: " + ingredient.getIngredientName() + " (ID: " + ingredient.getId() + ")");
+                                updateDTO.addIngredient(ingredient);
+                            }
                         }
-                        updateDTO.setIngredients(ingredient);
                     }
 
                     String newInstructions = instructionsTxt.getText();
                     updateDTO.setInstructions(newInstructions);
 
 
+                    System.out.println("Calling updateRecipe with DTO: " + updateDTO);
                     recipeService.updateRecipe(updateDTO);
+                    System.out.println("Update successful, refreshing UI");
+
+                    // Show success message
+                    JOptionPane.showMessageDialog(null, "Recipe updated successfully!", "Success", JOptionPane.INFORMATION_MESSAGE);
+
+                    // Refresh the recipe list
+                    recipesComboBox.removeAllItems();
+                    
+                    // Get the updated recipe directly by name
+                    try {
+                        Recipe updatedRecipe = recipeService.getRecipeByName(newRecipeName);
+                        selectedRecipe = updatedRecipe;  // Update selectedRecipe reference
+                        
+                        // Update ingredients display
+                        if (updatedRecipe.getIngredients() != null && !updatedRecipe.getIngredients().isEmpty()) {
+                            String ingredients = updatedRecipe.getIngredients().stream()
+                                .map(Ingredient::getIngredientName)
+                                .reduce((a, b) -> a + ", " + b)
+                                .orElse("No ingredients");
+                            ingredientsTxt.setText(ingredients);
+                        } else {
+                            ingredientsTxt.setText("");  // Clear if no ingredients
+                        }
+                        
+                        // Add the updated recipe to the combo box
+                        recipesComboBox.addItem(updatedRecipe.getRecipeName());
+                        
+                    } catch (RecipeNotFoundDAOException ex) {
+                        // If direct lookup fails, fall back to first letter search
+                        recipes = recipeService.getByFirstLetter(String.valueOf(newRecipeName.charAt(0)));
+                        for (Recipe r : recipes) {
+                            recipesComboBox.addItem(r.getRecipeName());
+                        }
+                    }
+
+                    // Select the updated recipe
+                    recipesComboBox.setSelectedItem(newRecipeName);
 
                 } catch (NumberFormatException e1){
                     JOptionPane.showMessageDialog(null, e1.getMessage(), "Error! Invalid Cooking Time.", JOptionPane.ERROR_MESSAGE);

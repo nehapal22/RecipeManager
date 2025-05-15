@@ -1,8 +1,6 @@
 package gr.recipemanagement.model;
 
-/**
- * @author Ntirintis John
- */
+
 public class Ingredient {
 
     private Integer id;

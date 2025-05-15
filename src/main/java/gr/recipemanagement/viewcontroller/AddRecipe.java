@@ -8,7 +8,6 @@ import gr.recipemanagement.factory.SQLStorageFactory;
 import gr.recipemanagement.model.Ingredient;
 import gr.recipemanagement.model.Recipe;
 import gr.recipemanagement.service.exceptions.IngredientNotFoundDAOException;
-import gr.recipemanagement.service.exceptions.RecipeInsertException;
 import gr.recipemanagement.service.exceptions.RecipeNotFoundDAOException;
 import gr.recipemanagement.service.recipeservice.IRecipeService;
 import gr.recipemanagement.service.recipeservice.RecipeServiceImpl;
@@ -22,9 +21,7 @@ import java.util.Map;
 
 import static gr.recipemanagement.viewcontroller.Menu.createStyledButton;
 
-/**
- * @author Ntirintis John
- */
+
 public class AddRecipe extends JFrame {
     private static final long serialVersionUID = 123457;
     private JPanel contentPane;
@@ -80,12 +77,6 @@ public class AddRecipe extends JFrame {
         instructionsField = new JTextField(15);
         cookingTimeField = new JTextField(15);
 
-        saveButton = createStyledButton("Save", buttonColor, font);
-        cancelButton = createStyledButton("Cancel", buttonColor, font);
-
-//        saveButton.setAlignmentX(Component.LEFT_ALIGNMENT);
-//        cancelButton.setAlignmentX(Component.RIGHT_ALIGNMENT);
-
         // Add some rigid areas to create spacing between components
         contentPane.add(new JLabel("Recipe Name:"));
         contentPane.add(recipeNameField);
@@ -99,16 +90,8 @@ public class AddRecipe extends JFrame {
         contentPane.add(new JLabel("Cooking Time in Minutes:"));
         contentPane.add(cookingTimeField);
         contentPane.add(Box.createRigidArea(new Dimension(0, 20)));
-        contentPane.add(saveButton);
-        contentPane.add(Box.createRigidArea(new Dimension(0, 5)));
-        contentPane.add(cancelButton);
-
-        // Remove the buttons from the contentPane
-        contentPane.remove(saveButton);
-        contentPane.remove(cancelButton);
-
+        
         // Add buttonPanel to the contentPane
-        contentPane.add(Box.createRigidArea(new Dimension(0, 20)));  // add some space before the buttons
         contentPane.add(buttonPanel);
 
         cancelButton.addActionListener(new ActionListener() {
@@ -130,61 +113,92 @@ public class AddRecipe extends JFrame {
                     recipeName = recipeNameField.getText().trim();
                     ingredients = ingredientsField.getText();
                     instructions = instructionsField.getText().trim();
-                    cookingTime = Double.parseDouble(cookingTimeField.getText());
+                    
+                    // Validate cooking time format
+                    try {
+                        cookingTime = Double.parseDouble(cookingTimeField.getText());
+                    } catch (NumberFormatException ex) {
+                        JOptionPane.showMessageDialog(null, "Please enter a valid number for cooking time", 
+                                "Validation Error!", JOptionPane.ERROR_MESSAGE);
+                        return;
+                    }
 
                     dto = new RecipeInsertDTO();
                     dto.setRecipeName(recipeName);
                     dto.setInstructions(instructions);
                     dto.setCookingTime(cookingTime);
 
-                    int recipeId = -1;
-
-                    // Validate Date
+                    // Validate Data
                     recipeErrors = RecipeValidator.validate(dto);
 
-                    String recipeNameMessage = (recipeErrors.get("recipename") != null) ? "recipename : " + recipeErrors.get("recipename") : "";
-                    String instructionsMessage = (recipeErrors.get("recipemame") != null) ? "recipename : " + recipeErrors.get("recipename") : "";
-
-                    recipeErrors = RecipeValidator.validate(dto);
                     if(!recipeErrors.isEmpty()){
-                        JOptionPane.showMessageDialog(null, recipeNameMessage + " " + instructionsMessage, "Validation Error!", JOptionPane.ERROR_MESSAGE);
+                        StringBuilder errorMessage = new StringBuilder();
+                        if(recipeErrors.get("recipename") != null) {
+                            errorMessage.append("Recipe Name: ").append(recipeErrors.get("recipename")).append("\n");
+                        }
+                        if(recipeErrors.get("instructions") != null) {
+                            errorMessage.append("Instructions: ").append(recipeErrors.get("instructions")).append("\n");
+                        }
+                        JOptionPane.showMessageDialog(null, errorMessage.toString(), "Validation Error!", JOptionPane.ERROR_MESSAGE);
                         return;
                     }
 
                     // Attempt to insert the recipe
                     Recipe newRecipe = recipeService.insertRecipe(dto);
-
-                    if(newRecipe != null){
-                        recipeId = newRecipe.getId();
+                    
+                    if(newRecipe == null){
+                        JOptionPane.showMessageDialog(null, "Failed to create recipe", 
+                                "Error!", JOptionPane.ERROR_MESSAGE);
+                        return;
                     }
 
-                    // Set ingredients
-                    String[] allIngredients = ingredients.replaceAll("\\s", "").split(",");
+                    int recipeId = newRecipe.getId();
 
-                    for(String ingredientName : allIngredients){
-                        int ingredientId;
+                    // Only proceed if we have ingredients to add
+                    if (!ingredients.trim().isEmpty()) {
+                        // Set ingredients
+                        String[] allIngredients = ingredients.replaceAll("\\s", "").split(",");
 
-                        // Check if ingredient exists
-                        Ingredient existingIngredient = ingredientDAO.getByName(ingredientName);
+                        for(String ingredientName : allIngredients){
+                            if (ingredientName.isEmpty()) continue;
+                            
+                            int ingredientId;
 
-                        if(existingIngredient != null){
-                            // In case it exists, get its ID
-                            ingredientId = existingIngredient.getId();
-                        } else {
-                            // If it doesn't exist, insert it and get the new ID
-                            ingredientId = ingredientDAO.insert(ingredientName);
+                            // Check if ingredient exists
+                            Ingredient existingIngredient = ingredientDAO.getByName(ingredientName);
+
+                            if(existingIngredient != null){
+                                // In case it exists, get its ID
+                                ingredientId = existingIngredient.getId();
+                            } else {
+                                // If it doesn't exist, insert it and get the new ID
+                                ingredientId = ingredientDAO.insert(ingredientName);
+                            }
+
+                            recipeIngredientDAO.linkRecipeAndIngredient(recipeId, ingredientId);
                         }
-
-                        recipeIngredientDAO.linkRecipeAndIngredient(recipeId, ingredientId);
                     }
 
-                    JOptionPane.showMessageDialog(null, "Recipe" + newRecipe.getRecipeName()
-                            + " was inserted", "Successful Insertion!", JOptionPane.PLAIN_MESSAGE);
-                } catch (RecipeNotFoundDAOException e1){
-                    JOptionPane.showMessageDialog(null, e1.getMessage(), "Error! Recipe not Found.", JOptionPane.ERROR_MESSAGE);
-                    e1.printStackTrace();
+                    JOptionPane.showMessageDialog(null, "Recipe \"" + newRecipe.getRecipeName() 
+                            + "\" was inserted successfully", "Successful Insertion!", JOptionPane.INFORMATION_MESSAGE);
+                    
+                    // Clear the fields after successful insertion
+                    recipeNameField.setText("");
+                    ingredientsField.setText("");
+                    instructionsField.setText("");
+                    cookingTimeField.setText("");
+                    
+                } catch (RecipeNotFoundDAOException ex){
+                    JOptionPane.showMessageDialog(null, ex.getMessage(), 
+                            "Error! Recipe not found.", JOptionPane.ERROR_MESSAGE);
+                    ex.printStackTrace();
                 } catch (IngredientNotFoundDAOException ex) {
-                    JOptionPane.showMessageDialog(null, ex.getMessage(), "Error! Ingredient already exists.", JOptionPane.ERROR_MESSAGE);
+                    JOptionPane.showMessageDialog(null, ex.getMessage(), 
+                            "Error! Issue with ingredient.", JOptionPane.ERROR_MESSAGE);
+                    ex.printStackTrace();
+                } catch (Exception ex) {
+                    JOptionPane.showMessageDialog(null, "Unexpected error: " + ex.getMessage(), 
+                            "Error!", JOptionPane.ERROR_MESSAGE);
                     ex.printStackTrace();
                 }
             }
@@ -193,4 +207,3 @@ public class AddRecipe extends JFrame {
         add(contentPane);
     }
 }
-

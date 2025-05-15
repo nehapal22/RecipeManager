@@ -1,47 +1,50 @@
 package gr.recipemanagement.dto.recipedto;
 
 import gr.recipemanagement.dto.BaseDTO;
-import gr.recipemanagement.model.Ingredient;
-import gr.recipemanagement.service.exceptions.IngredientNotFoundDAOException;
+import java.util.ArrayList;
+import java.util.List;
 
-/**
- * @author Ntirintis John
- */
 public class RecipeInsertDTO extends BaseDTO {
-    // We take the id from the base DTO class
-
-    private String ingredientName;
     private String recipeName;
     private String instructions;
-    private Ingredient ingredients;
+    private List<Integer> ingredientIds;
     private double cookingTime;
 
-    public RecipeInsertDTO() {}
+    public RecipeInsertDTO() {
+        this.ingredientIds = new ArrayList<>();
+    }
 
-    public RecipeInsertDTO(String recipeName, String instructions, double cookingTime){
+    public RecipeInsertDTO(String recipeName, String instructions, double cookingTime) {
+        this();
         setRecipeName(recipeName);
-        this.instructions = instructions.trim();
-        this.cookingTime = cookingTime;
+        setInstructions(instructions);
+        setCookingTime(cookingTime);
     }
 
-    public Ingredient getIngredients(){
-        return ingredients;
+    public List<Integer> getIngredientIds() {
+        return ingredientIds;
     }
 
-    public void setIngredients(Ingredient ingredients){
-        this.ingredients = ingredients;
+    public void setIngredientIds(List<Integer> ingredientIds) {
+        this.ingredientIds = ingredientIds != null ? ingredientIds : new ArrayList<>();
     }
 
-//    public void setIngredientByName(String ingredientName){
-//
-//    }
+    public void addIngredientId(Integer ingredientId) {
+        if (ingredientId != null) {
+            if (this.ingredientIds == null) {
+                this.ingredientIds = new ArrayList<>();
+            }
+            this.ingredientIds.add(ingredientId);
+        }
+    }
 
     public String getRecipeName() {
         return recipeName;
     }
 
     public void setRecipeName(String recipeName) {
-        this.recipeName = (recipeName == null) ? null : recipeName.trim(); ;
+        if (recipeName == null) throw new IllegalArgumentException("Recipe name cannot be null");
+        this.recipeName = recipeName.trim();
     }
 
     public String getInstructions() {
@@ -49,7 +52,8 @@ public class RecipeInsertDTO extends BaseDTO {
     }
 
     public void setInstructions(String instructions) {
-        this.instructions = instructions;
+        if (instructions == null) throw new IllegalArgumentException("Instructions cannot be null");
+        this.instructions = instructions.trim();
     }
 
     public double getCookingTime() {
@@ -57,14 +61,7 @@ public class RecipeInsertDTO extends BaseDTO {
     }
 
     public void setCookingTime(double cookingTime) {
+        if (cookingTime < 0) throw new IllegalArgumentException("Cooking time cannot be negative");
         this.cookingTime = cookingTime;
-    }
-
-    public String getIngredientName() {
-        return ingredientName;
-    }
-
-    public void setIngredientName(String ingredientName) {
-        this.ingredientName = ingredientName;
     }
 }

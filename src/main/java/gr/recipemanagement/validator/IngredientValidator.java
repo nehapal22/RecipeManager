@@ -5,9 +5,7 @@ import gr.recipemanagement.dto.ingredientdto.IngredientInsertDTO;
 import java.util.HashMap;
 import java.util.Map;
 
-/**
- * @author Ntirintis John
- */
+
 public class IngredientValidator {
 
     private IngredientValidator() {}

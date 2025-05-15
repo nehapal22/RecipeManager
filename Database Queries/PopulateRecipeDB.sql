@@ -1,14 +1,14 @@
 -- Insert sample recipes
 INSERT INTO recipes (recipename, instructions, cookingtime)
 VALUES
-    ('Apple Pie', 'Instructions for Apple Pie', 45.00),
+    ('Apple Pie','Instructions for Apple Pie', 45.00),
     ('Chocolate Cake', 'Instructions for Chocolate Cake', 60.00),
     ('Chicken Alfredo Pasta', 'Instructions for Chicken Alfredo Pasta', 30.00);
 
 -- Insert sample ingredients
 INSERT INTO ingredients (ingredientname, quantity, quantitytype)
 VALUES
-    ('Apple', 2.5, 'pcs'),
+    ('Apple', 2.5, 'pcs'), 
     ('Pie Crust', 1, 'pack'),
     ('Flour', 500, 'g'),
     ('Sugar', 200, 'g'),

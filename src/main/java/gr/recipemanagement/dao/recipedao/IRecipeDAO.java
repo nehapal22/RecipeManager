@@ -7,11 +7,7 @@ import gr.recipemanagement.service.exceptions.RecipeInsertException;
 import gr.recipemanagement.service.exceptions.RecipeNotFoundDAOException;
 
 import java.util.List;
-import java.util.Map;
 
-/**
- * @author Ntirintis John
- */
 public interface IRecipeDAO {
 
     Recipe insert(Recipe recipe) throws RecipeNotFoundDAOException;

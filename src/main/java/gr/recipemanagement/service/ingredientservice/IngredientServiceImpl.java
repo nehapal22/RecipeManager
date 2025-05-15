@@ -7,9 +7,6 @@ import gr.recipemanagement.factory.StorageFactory;
 import gr.recipemanagement.model.Ingredient;
 import gr.recipemanagement.service.exceptions.IngredientNotFoundDAOException;
 
-/**
- * @author Ntirintis John
- */
 public class IngredientServiceImpl implements IIngredientService {
 
     private IIngredientDAO ingredientDAO;

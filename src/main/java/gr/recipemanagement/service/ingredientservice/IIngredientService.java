@@ -5,9 +5,6 @@ import gr.recipemanagement.dto.ingredientdto.IngredientUpdateDTO;
 import gr.recipemanagement.model.Ingredient;
 import gr.recipemanagement.service.exceptions.IngredientNotFoundDAOException;
 
-/**
- * @author Ntirintis John
- */
 public interface IIngredientService {
 
     Ingredient insertIngredient(IngredientInsertDTO dto) throws IngredientNotFoundDAOException;

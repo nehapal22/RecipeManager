@@ -2,9 +2,6 @@ package gr.recipemanagement.model;
 
 import java.util.List;
 
-/**
- * @author Ntirintis John
- */
 public class Recipe {
 
     private Integer id;

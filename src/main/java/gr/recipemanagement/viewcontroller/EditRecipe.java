@@ -11,9 +11,6 @@ import java.awt.event.ActionListener;
 
 import static gr.recipemanagement.viewcontroller.Menu.createStyledButton;
 
-/**
- * @author Ntirintis John
- */
 public class EditRecipe extends JFrame {
     private static final long serialVersionUID = 123458;
     private JPanel contentPane;

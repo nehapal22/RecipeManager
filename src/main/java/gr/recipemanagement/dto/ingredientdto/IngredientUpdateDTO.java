@@ -2,14 +2,10 @@ package gr.recipemanagement.dto.ingredientdto;
 
 import gr.recipemanagement.dto.BaseDTO;
 
-/**
- * @author Ntirintis John
- */
 public class IngredientUpdateDTO extends BaseDTO {
 
-    private Integer id;
     private String ingredientName;
-    private double quantity;
+    private Double quantity;
     private String quantityType;
 
     private IngredientUpdateDTO() {}

@@ -5,9 +5,6 @@ import gr.recipemanagement.dto.recipedto.RecipeInsertDTO;
 import java.util.HashMap;
 import java.util.Map;
 
-/**
- * @author Ntirintis John
- */
 public class RecipeValidator {
 
     private RecipeValidator() {}

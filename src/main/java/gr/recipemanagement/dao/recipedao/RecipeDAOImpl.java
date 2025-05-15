@@ -12,9 +12,6 @@ import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * @author Ntirintis John
- */
 public class RecipeDAOImpl implements IRecipeDAO {
 
     @Override
@@ -96,33 +93,91 @@ public class RecipeDAOImpl implements IRecipeDAO {
 
     @Override
     public Recipe update(Recipe recipe) throws RecipeNotFoundDAOException {
-        String sql = "UPDATE RECIPES SET RECIPENAME = ?, INSTRUCTION = ?, COOKINGTIME = ? WHERE RECIPEID = ?";
+        System.out.println("RecipeDAOImpl.update - Starting update for recipe ID: " + recipe.getId());
+        String sql = "UPDATE RECIPES SET RECIPENAME=?, INSTRUCTIONS=?, COOKINGTIME=? WHERE RECIPEID=?";
+        String deleteIngredientsSQL = "DELETE FROM RECIPES_INGREDIENTS WHERE RECIPEID=?";
+        String insertIngredientsSQL = "INSERT INTO RECIPES_INGREDIENTS (RECIPEID, INGREDIENTID) VALUES (?, ?)";
 
-        try (Connection connection = DBUtil.getConnection();
-             PreparedStatement ps = connection.prepareStatement(sql)) {
+        Connection connection = null;
+        try {
+            connection = DBUtil.getConnection();
+            System.out.println("RecipeDAOImpl.update - Got connection, setting autoCommit to false");
+            connection.setAutoCommit(false);
 
-            int id = recipe.getId();
-            String recipeName = recipe.getRecipeName();
-            String instructions = recipe.getInstructions();
-            double cookingTime = recipe.getCookingTime();
+            // Update recipe details
+            try (PreparedStatement ps = connection.prepareStatement(sql)) {
+                int id = recipe.getId();
+                String recipeName = recipe.getRecipeName();
+                String instructions = recipe.getInstructions();
+                double cookingTime = recipe.getCookingTime();
 
-            ps.setString(1, recipeName);
-            ps.setString(2, instructions);
-            ps.setDouble(3, cookingTime);
-            ps.setInt(4, id);
+                System.out.println("RecipeDAOImpl.update - Updating recipe: ID=" + id + ", Name=" + recipeName);
+                ps.setString(1, recipeName);
+                ps.setString(2, instructions);
+                ps.setDouble(3, cookingTime);
+                ps.setInt(4, id);
 
-            ps.executeUpdate();
+                int rowsAffected = ps.executeUpdate();
+                System.out.println("RecipeDAOImpl.update - Recipe update affected " + rowsAffected + " rows");
+                if (rowsAffected == 0) {
+                    throw new RecipeNotFoundDAOException("Recipe not found with ID: " + id);
+                }
+            }
 
+            // Delete existing ingredients
+            try (PreparedStatement ps = connection.prepareStatement(deleteIngredientsSQL)) {
+                ps.setInt(1, recipe.getId());
+                int deleted = ps.executeUpdate();
+                System.out.println("RecipeDAOImpl.update - Deleted " + deleted + " existing ingredients");
+            }
+
+            // Insert new ingredients
+            if (recipe.getIngredients() != null && !recipe.getIngredients().isEmpty()) {
+                System.out.println("RecipeDAOImpl.update - Adding " + recipe.getIngredients().size() + " ingredients");
+                try (PreparedStatement ps = connection.prepareStatement(insertIngredientsSQL)) {
+                    for (Ingredient ingredient : recipe.getIngredients()) {
+                        ps.setInt(1, recipe.getId());
+                        ps.setInt(2, ingredient.getId());
+                        ps.executeUpdate();
+                        System.out.println("RecipeDAOImpl.update - Added ingredient: " + ingredient.getIngredientName());
+                    }
+                }
+            }
+
+            System.out.println("RecipeDAOImpl.update - All operations successful, committing transaction");
+            connection.commit();
+            System.out.println("RecipeDAOImpl.update - Transaction committed successfully");
             return recipe;
         } catch (SQLException e) {
+            System.err.println("RecipeDAOImpl.update - SQL error occurred: " + e.getMessage());
+            if (connection != null) {
+                try {
+                    System.out.println("RecipeDAOImpl.update - Rolling back transaction");
+                    connection.rollback();
+                } catch (SQLException ex) {
+                    System.err.println("RecipeDAOImpl.update - Error during rollback: " + ex.getMessage());
+                    ex.printStackTrace();
+                }
+            }
             e.printStackTrace();
             throw new RecipeNotFoundDAOException("Error in updating recipe " + recipe);
+        } finally {
+            if (connection != null) {
+                try {
+                    connection.setAutoCommit(true);
+                    connection.close();
+                    System.out.println("RecipeDAOImpl.update - Connection closed");
+                } catch (SQLException e) {
+                    System.err.println("RecipeDAOImpl.update - Error closing connection: " + e.getMessage());
+                    e.printStackTrace();
+                }
+            }
         }
     }
 
     @Override
     public void delete(int id) throws RecipeNotFoundDAOException {
-        String sql = "DELETE FROM RECIPES WHERE ID = ?";
+        String sql = "DELETE FROM RECIPES WHERE RECIPEID = ?";
 
         try (Connection connection = DBUtil.getConnection();
              PreparedStatement ps = connection.prepareStatement(sql)) {
@@ -146,7 +201,7 @@ public class RecipeDAOImpl implements IRecipeDAO {
 
     @Override
     public Recipe getById(int id) throws RecipeNotFoundDAOException {
-        String sql = "SELECT * FROM RECIPES WHERE ID = ?";
+        String sql = "SELECT * FROM RECIPES WHERE RECIPEID = ?";
         Recipe recipe = null;
         ResultSet rs = null;
 

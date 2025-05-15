@@ -2,9 +2,6 @@ package gr.recipemanagement.service.exceptions;
 
 import gr.recipemanagement.model.Ingredient;
 
-/**
- * @author Ntirintis John
- */
 public class IngredientNotFoundDAOException extends Exception {
 
     private static final long serialVersionUID = 123465L;
